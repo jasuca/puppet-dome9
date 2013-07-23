@@ -18,10 +18,12 @@
 #   include dome9
 # }
 class dome9 (
-  $pairkey = undef
+  $pairkey = undef,
+  $domegroups = ""
 ) {
   class { 'dome9::package':
     pairkey => $pairkey,
+    domegroups => $domegroups,
     notify  => Class['dome9::service'],
   }
 

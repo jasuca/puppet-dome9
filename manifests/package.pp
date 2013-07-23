@@ -14,7 +14,8 @@
 #
 # This class file is not called directly
 class dome9::package (
-  $pairkey = undef
+  $pairkey = undef,
+  $domegroups = "",
 ) {
   Exec {
     path => '/bin:/sbin:/usr/bin:/usr/sbin',
@@ -29,25 +30,19 @@ class dome9::package (
     fail('You must specify a pairkey')
   }
 
-  exec { 'dome9-key.asc':
-    command => 'wget -O - http://repository.dome9.com/ubuntu/dome9-key.asc | apt-key add -',
-    unless  => 'apt-key list | grep -c dome9-key.asc',
+  exec {'install dome9 repository':
+    command => '/bin/rpm -Uvh http://repository.dome9.com/centos/5/noarch/dome9-0.1.0-1.noarch.rpm > /dev/null',
+    creates => '/etc/yum.repos.d/Dome9.repo'
   }
 
-  exec { 'dome9.list':
-    command => "echo 'deb http://repository.dome9.com/ubuntu lucid main' >> /etc/apt/sources.list.d/dome9.list && apt-get update",
-    creates => '/etc/apt/sources.list.d/dome9.list',
-    require => Exec['dome9-key.asc']
-  }
-
-  package { 'dome9agent':
-    ensure  => latest,
-    require => Exec['dome9.list'],
-    notify  => Exec['pairkey']
+  package {'Dome9Agent':
+    ensure => 'present',
+    require => Exec['install dome9 repository'],
+    notify => Exec['pairkey']
   }
 
   exec { 'pairkey':
-    command     => "dome9d pair -k ${pairkey}",
+    command     => "dome9d pair -k ${pairkey} -g '${domegroups}'",
     refreshonly => true
   }
 }
